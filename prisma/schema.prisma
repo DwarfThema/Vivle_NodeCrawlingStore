@@ -14,7 +14,7 @@ datasource db {
 
 model Assets {
   id        Int      @id @default(autoincrement())
-  assetName String
+  assetName String   @unique
   assetType String?
   photoUrl  String?  @unique
   linkUrl   String   @unique

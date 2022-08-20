@@ -1,16 +1,14 @@
 "use strict";
-
 const express = require("express");
 const app = express();
+
 const { PrismaClient } = require("@prisma/client");
 const client = new PrismaClient();
+
 const selenium = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
 
-const PORT = 8080;
-const HOST = `192.168.0.4`;
-
-app.listen(PORT, () => {
+app.listen(process.env.PORT, () => {
   console.log("start");
 });
 
@@ -20,7 +18,8 @@ const driver = new selenium.Builder()
   .build();
 
 app.get("/db", (req, res) => {
-  res.send("DB페이지11\n");
+  res.send("DB페이지\n");
+  console.log("셀레니움 시작");
   async function mySelenium() {
     try {
       await driver.get("https://polyhaven.com/models");
@@ -48,16 +47,14 @@ app.get("/db", (req, res) => {
                   );
 
                   const img = await div.findElement(selenium.By.css("img"));
-
                   const src = await img.getAttribute(`src`);
-
                   const alt = await img.getAttribute(`alt`);
+
                   const asset = await client.assets.upsert({
                     where: {
-                      assetName: alt,
+                      linkUrl: hrefLink,
                     },
                     create: {
-                      id: i,
                       assetName: alt,
                       photoUrl: src,
                       linkUrl: hrefLink,
@@ -65,10 +62,6 @@ app.get("/db", (req, res) => {
                     update: {},
                   });
                   console.log(asset);
-
-                  /*                console.log(`assetName : ${alt}`);
-                  console.log(`photoUrl : ${src}`);
-                  console.log(`linkUrl : ${hrefLink}`); */
                 }
               });
           }, 1000)
@@ -78,11 +71,30 @@ app.get("/db", (req, res) => {
     } finally {
       setTimeout(() => {
         driver.quit();
-      }, 200000);
+      }, 500000);
     }
   }
   mySelenium();
-  console.log("셀레니움 끝");
 });
 
-console.log(`Running on http://${HOST}:${PORT}`);
+app.get("/toDb", (req, res) => {
+  var takeAsset;
+
+  const takefn = async () => {
+    try {
+      takeAsset = await client.assets.findMany();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setTimeout(() => {
+        res.json({
+          ok: true,
+          data: takeAsset,
+        });
+      }, 5000);
+    }
+  };
+  takefn();
+});
+
+console.log(`Running on http://${process.env.HOST}:${process.env.PORT}`);
